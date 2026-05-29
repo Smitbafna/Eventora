@@ -4,9 +4,28 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
+from app.models import (
+    Album,
+    AlbumCreate,
+    Comment,
+    CommentCreate,
+    Event,
+    EventCreate,
+    FaceDetection,
+    FaceRecognition,
+    Like,
+    Media,
+    MediaCreate,
+    MediaTag,
+    Notification,
+    User,
+    UserCreate,
+    UserTag,
+    UserUpdate,
+)
 
 
+# ====== USER CRUD ======
 def create_user(*, session: Session, user_create: UserCreate) -> User:
     db_obj = User.model_validate(
         user_create, update={"hashed_password": get_password_hash(user_create.password)}
@@ -38,15 +57,12 @@ def get_user_by_email(*, session: Session, email: str) -> User | None:
 
 
 # Dummy hash to use for timing attack prevention when user is not found
-# This is an Argon2 hash of a random password, used to ensure constant-time comparison
 DUMMY_HASH = "$argon2id$v=19$m=65536,t=3,p=4$MjQyZWE1MzBjYjJlZTI0Yw$YTU4NGM5ZTZmYjE2NzZlZjY0ZWY3ZGRkY2U2OWFjNjk"
 
 
 def authenticate(*, session: Session, email: str, password: str) -> User | None:
     db_user = get_user_by_email(session=session, email=email)
     if not db_user:
-        # Prevent timing attacks by running password verification even when user doesn't exist
-        # This ensures the response time is similar whether or not the email exists
         verify_password(password, DUMMY_HASH)
         return None
     verified, updated_password_hash = verify_password(password, db_user.hashed_password)
@@ -60,9 +76,198 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
     return db_user
 
 
-def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -> Item:
-    db_item = Item.model_validate(item_in, update={"owner_id": owner_id})
-    session.add(db_item)
+# ====== EVENT CRUD ======
+def create_event(*, session: Session, event_in: EventCreate, creator_id: uuid.UUID) -> Event:
+    db_event = Event.model_validate(event_in, update={"creator_id": creator_id})
+    session.add(db_event)
     session.commit()
-    session.refresh(db_item)
-    return db_item
+    session.refresh(db_event)
+    return db_event
+
+
+def get_event(*, session: Session, event_id: uuid.UUID) -> Event | None:
+    return session.get(Event, event_id)
+
+
+def get_events(*, session: Session, skip: int = 0, limit: int = 100) -> list[Event]:
+    statement = select(Event).offset(skip).limit(limit)
+    return session.exec(statement).all()
+
+
+# ====== ALBUM CRUD ======
+def create_album(*, session: Session, album_in: AlbumCreate) -> Album:
+    db_album = Album.model_validate(album_in)
+    session.add(db_album)
+    session.commit()
+    session.refresh(db_album)
+    return db_album
+
+
+def get_album(*, session: Session, album_id: uuid.UUID) -> Album | None:
+    return session.get(Album, album_id)
+
+
+def get_albums_by_event(*, session: Session, event_id: uuid.UUID) -> list[Album]:
+    statement = select(Album).where(Album.event_id == event_id)
+    return session.exec(statement).all()
+
+
+# ====== MEDIA CRUD ======
+def create_media(*, session: Session, media_in: MediaCreate, uploader_id: uuid.UUID) -> Media:
+    db_media = Media.model_validate(media_in, update={"uploader_id": uploader_id})
+    session.add(db_media)
+    session.commit()
+    session.refresh(db_media)
+    return db_media
+
+
+def get_media(*, session: Session, media_id: uuid.UUID) -> Media | None:
+    return session.get(Media, media_id)
+
+
+def get_media_by_event(*, session: Session, event_id: uuid.UUID, skip: int = 0, limit: int = 100) -> list[Media]:
+    statement = select(Media).where(Media.event_id == event_id).offset(skip).limit(limit)
+    return session.exec(statement).all()
+
+
+def get_media_by_album(*, session: Session, album_id: uuid.UUID) -> list[Media]:
+    statement = select(Media).where(Media.album_id == album_id)
+    return session.exec(statement).all()
+
+
+# ====== LIKE CRUD ======
+def create_like(*, session: Session, user_id: uuid.UUID, media_id: uuid.UUID) -> Like:
+    db_like = Like(user_id=user_id, media_id=media_id)
+    session.add(db_like)
+    session.commit()
+    session.refresh(db_like)
+    return db_like
+
+
+def get_like(*, session: Session, user_id: uuid.UUID, media_id: uuid.UUID) -> Like | None:
+    statement = select(Like).where(Like.user_id == user_id).where(Like.media_id == media_id)
+    return session.exec(statement).first()
+
+
+def delete_like(*, session: Session, user_id: uuid.UUID, media_id: uuid.UUID) -> None:
+    like = get_like(session=session, user_id=user_id, media_id=media_id)
+    if like:
+        session.delete(like)
+        session.commit()
+
+
+# ====== COMMENT CRUD ======
+def create_comment(*, session: Session, comment_in: CommentCreate, user_id: uuid.UUID) -> Comment:
+    db_comment = Comment.model_validate(comment_in, update={"user_id": user_id})
+    session.add(db_comment)
+    session.commit()
+    session.refresh(db_comment)
+    return db_comment
+
+
+def get_comments_by_media(*, session: Session, media_id: uuid.UUID) -> list[Comment]:
+    statement = select(Comment).where(Comment.media_id == media_id)
+    return session.exec(statement).all()
+
+
+# ====== TAG CRUD ======
+def create_user_tag(*, session: Session, media_id: uuid.UUID, tagged_user_id: uuid.UUID) -> UserTag:
+    db_tag = UserTag(media_id=media_id, tagged_user_id=tagged_user_id)
+    session.add(db_tag)
+    session.commit()
+    session.refresh(db_tag)
+    return db_tag
+
+
+def create_media_tag(*, session: Session, media_id: uuid.UUID, tag_name: str, confidence: float = 0.0) -> MediaTag:
+    db_tag = MediaTag(media_id=media_id, tag_name=tag_name, confidence=confidence)
+    session.add(db_tag)
+    session.commit()
+    session.refresh(db_tag)
+    return db_tag
+
+
+def get_media_tags(*, session: Session, media_id: uuid.UUID) -> list[MediaTag]:
+    statement = select(MediaTag).where(MediaTag.media_id == media_id)
+    return session.exec(statement).all()
+
+
+def get_media_by_tag(*, session: Session, tag_name: str) -> list[Media]:
+    statement = select(Media).join(MediaTag).where(MediaTag.tag_name == tag_name)
+    return session.exec(statement).all()
+
+
+# ====== NOTIFICATION CRUD ======
+def create_notification(*, session: Session, notification_in: dict[str, Any], user_id: uuid.UUID) -> Notification:
+    db_notification = Notification(**notification_in, user_id=user_id)
+    session.add(db_notification)
+    session.commit()
+    session.refresh(db_notification)
+    return db_notification
+
+
+def get_notifications(*, session: Session, user_id: uuid.UUID, skip: int = 0, limit: int = 100) -> list[Notification]:
+    statement = select(Notification).where(Notification.user_id == user_id).offset(skip).limit(limit)
+    return session.exec(statement).all()
+
+
+def mark_notification_as_read(*, session: Session, notification_id: uuid.UUID) -> Notification | None:
+    notification = session.get(Notification, notification_id)
+    if notification:
+        notification.is_read = True
+        session.add(notification)
+        session.commit()
+        session.refresh(notification)
+    return notification
+
+
+# ====== FACE RECOGNITION CRUD ======
+def create_face_reference(*, session: Session, user_id: uuid.UUID, reference_image_path: str) -> FaceRecognition:
+    db_face = FaceRecognition(user_id=user_id, reference_image_path=reference_image_path)
+    session.add(db_face)
+    session.commit()
+    session.refresh(db_face)
+    return db_face
+
+
+def get_face_reference(*, session: Session, user_id: uuid.UUID) -> FaceRecognition | None:
+    statement = select(FaceRecognition).where(FaceRecognition.user_id == user_id)
+    return session.exec(statement).first()
+
+
+def create_face_detection(*, session: Session, media_id: uuid.UUID, face_reference_id: uuid.UUID, confidence: float) -> FaceDetection:
+    db_detection = FaceDetection(media_id=media_id, face_reference_id=face_reference_id, confidence=confidence)
+    session.add(db_detection)
+    session.commit()
+    session.refresh(db_detection)
+    return db_detection
+
+
+def get_face_detections(*, session: Session, face_reference_id: uuid.UUID) -> list[FaceDetection]:
+    statement = select(FaceDetection).where(FaceDetection.face_reference_id == face_reference_id)
+    return session.exec(statement).all()
+
+
+# ====== FAVORITE CRUD ======
+def add_to_favorites(*, session: Session, user_id: uuid.UUID, media_id: uuid.UUID) -> Media | None:
+    media = get_media(session=session, media_id=media_id)
+    if media and user_id not in [u.id for u in media.favorited_by]:
+        user = session.get(User, user_id)
+        if user:
+            media.favorited_by.append(user)
+            session.add(media)
+            session.commit()
+            session.refresh(media)
+    return media
+
+
+def remove_from_favorites(*, session: Session, user_id: uuid.UUID, media_id: uuid.UUID) -> Media | None:
+    media = get_media(session=session, media_id=media_id)
+    if media:
+        user = session.get(User, user_id)
+        if user and user in media.favorited_by:
+            media.favorited_by.remove(user)
+            session.add(media)
+            session.commit()
+            session.refresh(media)
+    return media
