@@ -50,7 +50,7 @@ const formSchema = z
       .optional()
       .or(z.literal("")),
     confirm_password: z.string().optional(),
-    role: z.enum(["admin", "photographer", "club_member", "viewer"]).optional(),
+    role: z.enum(["ADMIN", "PHOTOGRAPHER", "CLUB_MEMBER", "VIEWER"]).optional(),
     is_active: z.boolean().optional(),
   })
   .refine((data) => !data.password || data.password === data.confirm_password, {
