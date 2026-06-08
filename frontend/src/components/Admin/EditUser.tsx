@@ -77,7 +77,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
     defaultValues: {
       email: user.email,
       full_name: user.full_name ?? undefined,
-      role: user.role ?? "viewer",
+      role: user.role ?? "VIEWER",
       is_active: user.is_active,
     },
   })
