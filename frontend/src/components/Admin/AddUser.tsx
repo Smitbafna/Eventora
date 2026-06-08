@@ -51,7 +51,7 @@ const formSchema = z
     confirm_password: z
       .string()
       .min(1, { message: "Please confirm your password" }),
-    role: z.enum(["admin", "photographer", "club_member", "viewer"]),
+    role: z.enum(["ADMIN", "PHOTOGRAPHER", "CLUB_MEMBER", "VIEWER"]),
     is_active: z.boolean(),
   })
   .refine((data) => data.password === data.confirm_password, {
