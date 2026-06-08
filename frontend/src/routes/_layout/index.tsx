@@ -99,7 +99,7 @@ function Dashboard() {
             {events.data.slice(0, 4).map((event) => (
               <Link
                 key={event.id}
-                to="/events/$eventId"
+                to="/event/$eventId"
                 params={{ eventId: event.id }}
                 className="rounded-lg border p-4 hover:bg-muted/50 transition-colors"
               >
