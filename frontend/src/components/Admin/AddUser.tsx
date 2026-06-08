@@ -75,7 +75,7 @@ const AddUser = () => {
       full_name: "",
       password: "",
       confirm_password: "",
-      role: "viewer",
+      role: "VIEWER",
       is_active: true,
     },
   })
