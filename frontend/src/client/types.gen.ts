@@ -188,7 +188,7 @@ export type UserRegister = {
     full_name?: string | null;
 };
 
-export type UserRole = 'admin' | 'photographer' | 'club_member' | 'viewer';
+export type UserRole = 'ADMIN' | 'PHOTOGRAPHER' | 'CLUB_MEMBER' | 'VIEWER';
 
 export type UserTagCreate = {
     tagged_user_id: string;
