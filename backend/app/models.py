@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
-
+from typing import Optional
 from pydantic import EmailStr
 from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship, SQLModel
@@ -69,6 +69,11 @@ class UpdatePassword(SQLModel):
     new_password: str = Field(min_length=8, max_length=128)
 
 
+class MediaFavorite(SQLModel, table=True):
+    media_id: uuid.UUID = Field(foreign_key="media.id", primary_key=True, ondelete="CASCADE")
+    user_id: uuid.UUID = Field(foreign_key="user.id", primary_key=True, ondelete="CASCADE")
+
+
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
@@ -82,8 +87,8 @@ class User(UserBase, table=True):
     likes: list["Like"] = Relationship(back_populates="user", cascade_delete=True)
     comments: list["Comment"] = Relationship(back_populates="user", cascade_delete=True)
     notifications: list["Notification"] = Relationship(back_populates="user", cascade_delete=True)
-    face_reference: "FaceRecognition | None" = Relationship(back_populates="user", cascade_delete=True)
-    favorite_media: list["Media"] = Relationship(back_populates="favorited_by", link_model="MediaFavorite")
+    face_reference: Optional["FaceRecognition"] = Relationship(back_populates="user",cascade_delete=True)
+    favorite_media: list["Media"] = Relationship(back_populates="favorited_by", link_model=MediaFavorite)
 
 
 class UserPublic(UserBase):
@@ -202,7 +207,7 @@ class Media(MediaBase, table=True):
     event_id: uuid.UUID = Field(foreign_key="event.id", nullable=False, ondelete="CASCADE")
     event: Event = Relationship(back_populates="media")
     album_id: uuid.UUID | None = Field(foreign_key="album.id", default=None, ondelete="CASCADE")
-    album: "Album | None" = Relationship(back_populates="media")
+    album: Optional["Album"] = Relationship(back_populates="media")
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
         sa_type=DateTime(timezone=True),  # type: ignore
@@ -212,7 +217,7 @@ class Media(MediaBase, table=True):
     comments: list["Comment"] = Relationship(back_populates="media", cascade_delete=True)
     tags: list["MediaTag"] = Relationship(back_populates="media", cascade_delete=True)
     user_tags: list["UserTag"] = Relationship(back_populates="media", cascade_delete=True)
-    favorited_by: list[User] = Relationship(back_populates="favorite_media", link_model="MediaFavorite")
+    favorited_by: list[User] = Relationship(back_populates="favorite_media", link_model=MediaFavorite)
     face_detections: list["FaceDetection"] = Relationship(back_populates="media", cascade_delete=True)
 
 
@@ -334,12 +339,6 @@ class NotificationPublic(NotificationBase):
     user_id: uuid.UUID
     is_read: bool
     created_at: datetime | None = None
-
-
-# ====== LINK MODELS ======
-class MediaFavorite(SQLModel, table=True):
-    media_id: uuid.UUID = Field(foreign_key="media.id", primary_key=True, ondelete="CASCADE")
-    user_id: uuid.UUID = Field(foreign_key="user.id", primary_key=True, ondelete="CASCADE")
 
 
 # ====== GENERIC MODELS ======

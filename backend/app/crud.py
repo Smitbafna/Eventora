@@ -7,16 +7,20 @@ from app.core.security import get_password_hash, verify_password
 from app.models import (
     Album,
     AlbumCreate,
+    AlbumUpdate,
     Comment,
     CommentCreate,
     Event,
     EventCreate,
+    EventUpdate,
     FaceDetection,
     FaceRecognition,
     Like,
     Media,
     MediaCreate,
+    MediaUpdate,
     MediaTag,
+    get_datetime_utc,
     Notification,
     User,
     UserCreate,
@@ -94,6 +98,22 @@ def get_events(*, session: Session, skip: int = 0, limit: int = 100) -> list[Eve
     return session.exec(statement).all()
 
 
+def update_event(*, session: Session, db_event: Event, event_in: EventUpdate) -> Event:
+    event_data = event_in.model_dump(exclude_unset=True)
+    db_event.sqlmodel_update(event_data, update={"updated_at": get_datetime_utc()})
+    session.add(db_event)
+    session.commit()
+    session.refresh(db_event)
+    return db_event
+
+
+def delete_event(*, session: Session, event_id: uuid.UUID) -> None:
+    event = get_event(session=session, event_id=event_id)
+    if event:
+        session.delete(event)
+        session.commit()
+
+
 # ====== ALBUM CRUD ======
 def create_album(*, session: Session, album_in: AlbumCreate) -> Album:
     db_album = Album.model_validate(album_in)
@@ -110,6 +130,22 @@ def get_album(*, session: Session, album_id: uuid.UUID) -> Album | None:
 def get_albums_by_event(*, session: Session, event_id: uuid.UUID) -> list[Album]:
     statement = select(Album).where(Album.event_id == event_id)
     return session.exec(statement).all()
+
+
+def update_album(*, session: Session, db_album: Album, album_in: AlbumUpdate) -> Album:
+    album_data = album_in.model_dump(exclude_unset=True)
+    db_album.sqlmodel_update(album_data)
+    session.add(db_album)
+    session.commit()
+    session.refresh(db_album)
+    return db_album
+
+
+def delete_album(*, session: Session, album_id: uuid.UUID) -> None:
+    album = get_album(session=session, album_id=album_id)
+    if album:
+        session.delete(album)
+        session.commit()
 
 
 # ====== MEDIA CRUD ======
@@ -133,6 +169,22 @@ def get_media_by_event(*, session: Session, event_id: uuid.UUID, skip: int = 0, 
 def get_media_by_album(*, session: Session, album_id: uuid.UUID) -> list[Media]:
     statement = select(Media).where(Media.album_id == album_id)
     return session.exec(statement).all()
+
+
+def update_media(*, session: Session, db_media: Media, media_in: MediaUpdate) -> Media:
+    media_data = media_in.model_dump(exclude_unset=True)
+    db_media.sqlmodel_update(media_data)
+    session.add(db_media)
+    session.commit()
+    session.refresh(db_media)
+    return db_media
+
+
+def delete_media(*, session: Session, media_id: uuid.UUID) -> None:
+    media = get_media(session=session, media_id=media_id)
+    if media:
+        session.delete(media)
+        session.commit()
 
 
 # ====== LIKE CRUD ======

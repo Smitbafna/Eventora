@@ -1,0 +1,17 @@
+signup.tsx:3 [tanstack-router] These exports from "/home/smit-bafna/Projects/event-management/monorepo/frontend/src/routes/signup.tsx" will not be code-split and will increase your bundle size:
+- SignUp
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+_layout.tsx:2 [tanstack-router] These exports from "/home/smit-bafna/Projects/event-management/monorepo/frontend/src/routes/_layout.tsx" will not be code-split and will increase your bundle size:
+- Layout
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+_layout.tsx:26 ReferenceError: UsersService is not defined
+    at useAuth (useAuth.ts:25:14)
+    at AppSidebar (AppSidebar.tsx:23:33)
+
+
+The above error occurred in the <AppSidebar> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundaryImpl.
+inpage.js:166 Warning: Error in route match: __root__/
+﻿

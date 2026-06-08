@@ -8,10 +8,11 @@ import { columns, type UserTableData } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingUsers from "@/components/Pending/PendingUsers"
 import useAuth from "@/hooks/useAuth"
+import { isAdmin } from "@/lib/roles"
 
 function getUsersQueryOptions() {
   return {
-    queryFn: () => UsersService.readUsers({ skip: 0, limit: 100 }),
+    queryFn: () => UsersService.usersReadUsers({ skip: 0, limit: 100 }),
     queryKey: ["users"],
   }
 }
@@ -19,8 +20,8 @@ function getUsersQueryOptions() {
 export const Route = createFileRoute("/_layout/admin")({
   component: Admin,
   beforeLoad: async () => {
-    const user = await UsersService.readUserMe()
-    if (!user.is_superuser) {
+    const user = await UsersService.usersReadUserMe()
+    if (!isAdmin(user.role)) {
       throw redirect({
         to: "/",
       })
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/_layout/admin")({
   head: () => ({
     meta: [
       {
-        title: "Admin - FastAPI Cloud",
+        title: "Admin - Event Media Platform",
       },
     ],
   }),
