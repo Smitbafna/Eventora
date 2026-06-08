@@ -43,8 +43,8 @@ export const columns: ColumnDef<UserTableData>[] = [
     accessorKey: "role",
     header: "Role",
     cell: ({ row }) => (
-      <Badge variant={row.original.role === "admin" ? "default" : "secondary"}>
-        {ROLE_LABELS[row.original.role ?? "viewer"]}
+      <Badge variant={row.original.role === "ADMIN" ? "default" : "secondary"}>
+        {ROLE_LABELS[row.original.role ?? "VIEWER"]}
       </Badge>
     ),
   },
