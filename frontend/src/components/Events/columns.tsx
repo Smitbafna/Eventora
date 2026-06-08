@@ -23,7 +23,7 @@ export const columns: ColumnDef<EventPublic>[] = [
     header: "Name",
     cell: ({ row }) => (
       <Link
-        to="/events/$eventId"
+        to="/event/$eventId"
         params={{ eventId: row.original.id }}
         className="font-medium hover:underline"
       >
@@ -72,7 +72,7 @@ export const columns: ColumnDef<EventPublic>[] = [
     header: "",
     cell: ({ row }) => (
       <Button variant="ghost" size="sm" asChild>
-        <Link to="/events/$eventId" params={{ eventId: row.original.id }}>
+        <Link to="/event/$eventId" params={{ eventId: row.original.id }}>
           <ExternalLink className="size-4" />
           Open
         </Link>
