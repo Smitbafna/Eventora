@@ -2,7 +2,7 @@
 
 Eventora is a full-stack event media management platform that enables organizations, clubs, photographers, and participants to create events, organize media into albums, and securely manage uploads with role-based access control.
 
-Built with a modern monorepo architecture using FastAPI, React, and TypeScript.
+Built using FastAPI, React, and TypeScript.
 
 ---
 
